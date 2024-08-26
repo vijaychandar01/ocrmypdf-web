@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR PDF Processor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Upload PDF files for OCR</h1>
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+        <label for="file">Choose PDF files:</label>
+        <input type="file" id="file" name="file" multiple required>
+        <br><br>
+        <label>Select up to 3 languages:</label><br>
+        {% for language in languages %}
+            <input type="checkbox" name="languages" value="{{ language }}" id="{{ language }}" {% if language == 'eng' %} checked {% endif %}>
+            <label for="{{ language }}">{{ language }}</label><br>
+        {% endfor %}
+        <br>
+        <p>Note: Choosing more languages than required will slow down the process</p>
+        <button type="submit">Upload and Process</button>
+    </form>
+
+    <div id="progressContainer" style="display:none;">
+        <h2>Processing...</h2>
+        <div id="progressBar" style="width: 100%; background-color: #ddd;">
+            <div id="progress" style="width: 0%; height: 30px; background-color: #4CAF50;"></div>
+        </div>
+        <p id="progressText">0%</p>
+    </div>
+
+    <div id="downloadContainer" style="display:none;">
+        <h2>Processed Files</h2>
+        <a id="downloadLink" href="#">Download Processed Files</a>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+    // Ensure at least one language is selected
+    var languageCheckboxes = document.querySelectorAll('input[name="languages"]');
+    var selectedLanguages = Array.from(languageCheckboxes).filter(checkbox => checkbox.checked);
+
+    if (selectedLanguages.length === 0) {
+        alert("Please select at least one language.");
+        event.preventDefault();
+        return;
+    }
+
+    event.preventDefault();
+    var formData = new FormData(this);
+    document.getElementById('progressContainer').style.display = 'block';
+
+    fetch('/', {
+        method: 'POST',
+        body: formData
+    }).then(response => response.json())
+    .then(data => {
+        var taskId = data.task_id;
+        var resultFile = data.result_file;
+
+        function checkProgress() {
+            fetch(`/progress/${taskId}`)
+            .then(response => response.json())
+            .then(progressData => {
+                var progress = parseInt(progressData.progress);
+                var progressBar = document.getElementById('progress');
+                var progressText = document.getElementById('progressText');
+
+                progressBar.style.width = progress + '%';
+                progressText.textContent = progress + '%';
+
+                if (progress < 100) {
+                    // Gradually simulate progress
+                    if (progress < 90) {
+                        progressBar.style.width = (progress + Math.random() * 2) + '%';
+                        progressText.textContent = Math.round(progress + Math.random() * 2) + '%';
+                    }
+                    setTimeout(checkProgress, 1000); // Adjust timing as necessary
+                } else {
+                    window.location.href = `/download_page/${taskId}?result_file=${encodeURIComponent(resultFile)}`;
+                }
+            });
+        }
+
+        checkProgress();
+    });
+});
+    </script>     
+</body>
+</html>
