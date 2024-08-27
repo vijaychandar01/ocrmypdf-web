@@ -1,0 +1,1 @@
+docker run --rm -i   -v "$(pwd)/uploads:/data"   samyaktechlabsocr:latest   /data/gpt-4_scanned.pdf /data/gpt-4_scanned_output.pdf   -l eng   --jobs 4   --optimize 0   --skip-text   --skip-big 10
