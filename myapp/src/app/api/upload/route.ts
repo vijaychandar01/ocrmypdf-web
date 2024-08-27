@@ -15,11 +15,16 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const languages = formData.get('languages') as string;
+    const MAX_SIZE_MB = 30;
 
     if (!file) {
       return NextResponse.json({ error: 'File is required' }, { status: 400 });
     }
-
+    
+    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+      return NextResponse.json({ error: `File size exceeds the limit of ${MAX_SIZE_MB} MB` }, { status: 400 });
+    }
+    
     if (!file.name.toLowerCase().endsWith('.pdf')) {
       return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 });
     }
